@@ -3,6 +3,7 @@ import datetime
 import glob
 import itertools
 import json
+from logging import log
 import os
 from PIL import Image
 import random
@@ -110,29 +111,43 @@ class Generator:
         for i in range(0, len(ranges)):
             random.shuffle(ranges[i])
 
+
+    
+        if os.path.exists("log.txt"):
+            os.remove("log.txt")
+        logfile = open("log.txt", "w")
+
+
         shuffled_ranges = []
-        for x in itertools.product(*ranges):
+        while len(shuffled_ranges) < 50000:
             colors = {"Orange.png": 0, "Mint.png": 0, "Blue.png": 0, "Purple.png": 0, "Red.png": 0, "Yellow.png": 0}
             skip_iteration = False
-            for item in x:
-                colors[item.split("/")[2]] += 1
+
+            tmp = []
+            for x in ranges:
+                tmp.append(random.choice(x))
+            for y in tmp:
+                if y.split("/")[2]:
+                    colors[y.split("/")[2]] += 1
             
             for key, value in colors.items():
-                if value >= 8:
-                    print("Skipping... Using more than 9 of the same colors")
+                if value > 8:
+                    print("Skipping... Using more than 9 of the same colors", colors)
                     skip_iteration = True 
-            
-            if not skip_iteration: 
-                shuffled_ranges.append(x)
+ 
+            if tuple(tmp) not in shuffled_ranges:
+                if not skip_iteration:
+                    print("Adding", colors)
+                    shuffled_ranges.append(tuple(tmp))
+            else:
+                print("Already exists")
 
-            if len(shuffled_ranges) > 50000:
-                break
-        random.shuffle(shuffled_ranges)
 
         for dna in shuffled_ranges:
             if dna in self.dna:
                 print("DNA already exists. Can not add")
             else:
+                print(dna, file=logfile)
                 self.dna.add(dna)
 
                 # TODO: Remove hard coded size
@@ -187,6 +202,7 @@ class Generator:
                 break 
 
         print("Created %s unique images." % self.generation_count)
+        logfile.close()
 
     def _update_cid(self, cid):
         """
