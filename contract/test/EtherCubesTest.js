@@ -2,8 +2,9 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const ETH_PRICE = 0.01;
 const WEI_PRICE = ETH_PRICE * 10 ** 18;
+const MAX_SUPPLY = 777;
 
-describe("Bunny Babies Contract", function () {
+describe("EtherCubes Contract", function () {
   let EtherCubes;
   let etherCubes;
   let owner;
@@ -299,7 +300,7 @@ describe("Bunny Babies Contract", function () {
       await etherCubes.flipPauseStatus();
     }
 
-    for (let i = 0; i < 777; i++) {
+    for (let i = 0; i < MAX_SUPPLY; i++) {
       await etherCubes.connect(addr1).mint(1, {
         value: (WEI_PRICE * 1).toString(),
       });
@@ -316,7 +317,7 @@ describe("Bunny Babies Contract", function () {
       await etherCubes.flipPauseStatus();
     }
 
-    for (let i = 0; i < 777; i++) {
+    for (let i = 0; i < MAX_SUPPLY; i++) {
       await etherCubes.connect(addr1).mint(1, {
         value: (WEI_PRICE * 1).toString(),
       });
@@ -345,7 +346,7 @@ describe("Bunny Babies Contract", function () {
       await etherCubes.flipPauseStatus();
     }
 
-    for (let i = 0; i < 775; i++) {
+    for (let i = 0; i < MAX_SUPPLY - 2; i++) {
       await etherCubes.connect(addr1).mint(1, {
         value: (WEI_PRICE * 1).toString(),
       });

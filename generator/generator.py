@@ -62,9 +62,12 @@ class Generator:
         )
 
         logging.info("Starting generator.py")
+
         self.name = "Candy Cubes"
         self.description = "This is the description."
         self.collection_size = 777
+        self.height = 600
+        self.width = 600
         self.config = dotenv_values(".env")
         self._cleanup()
 
@@ -173,8 +176,7 @@ class Generator:
             else:
                 self.dna.add(dna)
 
-                # TODO: Remove hard coded size
-                base_layer = Image.new("RGBA", (600, 600))
+                base_layer = Image.new("RGBA", (self.height, self.width))
                 attributes = []
                 for item in dna[0:]:
                     new_layer = Image.open(item)

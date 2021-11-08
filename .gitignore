@@ -3,4 +3,4 @@
 **/output
 **/artifacts
 **/cache
-**/generator.log
+generator/generator.log
