@@ -1,0 +1,19 @@
+{
+  "name": "generator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "upload_pinata.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.23.0",
+    "base-path-converter": "^1.0.2",
+    "dotenv": "^10.0.0",
+    "form-data": "^4.0.0",
+    "fs": "0.0.1-security",
+    "recursive-fs": "^2.1.0"
+  }
+}
