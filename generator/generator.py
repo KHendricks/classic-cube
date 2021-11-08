@@ -166,13 +166,13 @@ class Generator:
                     logging.debug("Adding %s" % colors)
                     self.shuffled_traits.append(tuple(image_traits))
             else:
-                logging.warn("Image already exists.")
+                logging.warning("Image with these traits already exist %s." % image_traits)
 
     def _generate_images(self):
         logging.info("Generating random images.")    
         for dna in self.shuffled_traits:
             if dna in self.dna:
-                logging.warn("DNA already exists. Can not add")
+                logging.warning("DNA already exists: %s" % dna)
             else:
                 self.dna.add(dna)
 
