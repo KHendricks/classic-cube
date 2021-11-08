@@ -1,12 +1,12 @@
 async function main() {
-  const CandyCubes = await ethers.getContractFactory("CandyCubes");
+  const EtherCubes = await ethers.getContractFactory("EtherCubes");
 
-  const candyCubes = await CandyCubes.deploy(
-    "CandyCubes",
-    "BUN",
+  const etherCubes = await EtherCubes.deploy(
+    "EtherCubes",
+    "ECUBE",
     "Qmcbaw1ijr6hyhsd3XQvJJH7ecSC6jQCn7ezoWNJsCmGXg"
   );
-  console.log("Contract was deployed to: ", candyCubes.address);
+  console.log("Contract was deployed to: ", etherCubes.address);
 }
 
 main()

@@ -3,7 +3,7 @@ import datetime
 import glob
 import itertools
 import json
-from logging import log
+import logging
 import os
 from PIL import Image
 import random
@@ -49,12 +49,28 @@ class Generator:
     """
 
     def __init__(self):
+        log_name = "generator.log"
+        if os.path.exists(log_name):
+            os.remove(log_name)
+        log_format = "%(asctime)s [%(levelname)s] "
+        log_format += "[%(filename)s:%(funcName)s:%(lineno)s]: %(message)s"
 
+        logging.basicConfig(
+            filename=log_name,
+            level=logging.INFO,
+            format=log_format,
+        )
+
+        logging.info("Starting generator.py")
+        self.name = "Candy Cubes"
+        self.description = "This is the description."
+        self.collection_size = 777
         self.config = dotenv_values(".env")
         self._cleanup()
 
         self.dna = set()
         self.generation_count = 0
+        self.shuffled_traits = []
         self._set_layers()
         self._generate()
         # self._pin_files()
@@ -66,8 +82,11 @@ class Generator:
         """
         image_list = glob.glob(os.path.join("output/images/", "*"))
         json_list = glob.glob(os.path.join("output/json/", "*"))
+
+        logging.info("Removing %s old images." % len(image_list))
         for x in image_list:
             os.remove(x)
+        logging.info("Removing %s old json." % len(json_list))
         for x in json_list:
             os.remove(x)
 
@@ -90,16 +109,11 @@ class Generator:
             ret_val[root] = filepaths
 
         self.layers = collections.OrderedDict(sorted(ret_val.items()))
+        logging.debug("Layers have been set: ")
+        for layer in self.layers:
+            logging.debug("  %s" % layer)
 
-    def _generate(self):
-        """
-        Generates the images from the layer. The set_layers path
-        must be ran prior to this. This function will create unique
-        combinations of all the layers and ensure no duplicates are
-        made. I.e. there will always at least be one difference from other images.
-        """
-        print("Generating images...")
-
+    def _generate_traits(self):
         # Create a list of lists of the various layers
         ranges = []
         for key, value in self.layers.items():
@@ -107,47 +121,56 @@ class Generator:
             if key != "input/background":
                 ranges.append(value)
 
+        logging.debug("Ranges have been set: ")
+        for range_value in ranges:
+            logging.debug("  %s" % range_value)
 
         for i in range(0, len(ranges)):
             random.shuffle(ranges[i])
 
+        logging.debug("Shuffling ranges: ")
+        for range_value in ranges:
+            logging.debug("  %s" % range_value)
 
-    
-        if os.path.exists("log.txt"):
-            os.remove("log.txt")
-        logfile = open("log.txt", "w")
-
-
-        shuffled_ranges = []
-        while len(shuffled_ranges) < 50000:
-            colors = {"Orange.png": 0, "Mint.png": 0, "Blue.png": 0, "Purple.png": 0, "Red.png": 0, "Yellow.png": 0}
+        logging.info("Generating randomized image traits.")
+        while len(self.shuffled_traits) < 10000:
+            colors = {
+                "Orange.png": 0,
+                "Mint.png": 0,
+                "Blue.png": 0,
+                "Purple.png": 0,
+                "Red.png": 0,
+                "Yellow.png": 0,
+            }
             skip_iteration = False
 
-            tmp = []
-            for x in ranges:
-                tmp.append(random.choice(x))
-            for y in tmp:
-                if y.split("/")[2]:
-                    colors[y.split("/")[2]] += 1
-            
+            image_traits = []
+            for range_value in ranges:
+                image_traits.append(random.choice(range_value))
+            for x in image_traits:
+                if x.split("/")[2]:
+                    colors[x.split("/")[2]] += 1
+
             for key, value in colors.items():
                 if value > 8:
-                    print("Skipping... Using more than 9 of the same colors", colors)
-                    skip_iteration = True 
- 
-            if tuple(tmp) not in shuffled_ranges:
+                    logging.debug(
+                        "Skipping... Using more than 9 of the same colors %s" % colors
+                    )
+                    skip_iteration = True
+
+            if tuple(image_traits) not in self.shuffled_traits:
                 if not skip_iteration:
-                    print("Adding", colors)
-                    shuffled_ranges.append(tuple(tmp))
+                    logging.debug("Adding %s" % colors)
+                    self.shuffled_traits.append(tuple(image_traits))
             else:
-                print("Already exists")
+                logging.warn("Image already exists.")
 
-
-        for dna in shuffled_ranges:
+    def _generate_images(self):
+        logging.info("Generating random images.")    
+        for dna in self.shuffled_traits:
             if dna in self.dna:
-                print("DNA already exists. Can not add")
+                logging.warn("DNA already exists. Can not add")
             else:
-                print(dna, file=logfile)
                 self.dna.add(dna)
 
                 # TODO: Remove hard coded size
@@ -182,27 +205,35 @@ class Generator:
                 # Create the json associated with the image
                 data = dict()
                 data["dna"] = hash(str(dna))
-                data["name"] = "%s #%s" % (self.config["name"], self.generation_count)
-                data["description"] = "This is the description"
+                data["name"] = "%s #%s" % (self.name, self.generation_count)
+                data["description"] = self.description
                 data["image"] = "ipfs://REPLACE_ME/%s.png" % self.generation_count
                 data["date"] = round(datetime.datetime.utcnow().timestamp())
                 data["attributes"] = attributes
 
-                with open(
-                    "output/json/%s" % self.generation_count, "w"
-                ) as outfile:
+                with open("output/json/%s" % self.generation_count, "w") as outfile:
                     json.dump(data, outfile)
 
                 self.generation_count += 1
 
-            if self.generation_count % 100 == 0:
-                print("Currently made %s images..." % self.generation_count)
+            if self.generation_count % 100 == 0 and self.generation_count > 0:
+                logging.info("Currently made %s images..." % self.generation_count)
 
-            if self.generation_count == 8192:
-                break 
+            if self.generation_count == self.collection_size:
+                break
 
-        print("Created %s unique images." % self.generation_count)
-        logfile.close()
+
+    def _generate(self):
+        """
+        Generates the images from the layer. The set_layers path
+        must be ran prior to this. This function will create unique
+        combinations of all the layers and ensure no duplicates are
+        made. I.e. there will always at least be one difference from other images.
+        """
+        logging.info("Starting generation process.")
+        self._generate_traits()
+        self._generate_images()
+        logging.info("Created %s unique images." % self.generation_count)
 
     def _update_cid(self, cid):
         """
